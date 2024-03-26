@@ -1,0 +1,23 @@
+set cut_paste_input [stack 0]
+version 14.1 v1
+push $cut_paste_input
+NoOp {
+ name cleanScript
+ knobChanged "n = nuke.thisNode()\nk = nuke.thisKnob()\nif k.name() == \"unusefull\":\n    if k.value() == 1:\n        n\[\"sources\"].setEnabled(True)\n    else:\n        n\[\"sources\"].setEnabled(False)\nelse:\n    None"
+ tile_color 0x7fffff
+ selected true
+ xpos 11014
+ ypos 1850
+ addUserKnob {20 User}
+ addUserKnob {26 description l "" +STARTLINE T "<b>Choose what you want to remove</b>\n"}
+ addUserKnob {6 viewers l Viewers t "Removes all the viewers from the main comp ( The viewers in groups are delted by default)" +STARTLINE}
+ viewers true
+ addUserKnob {6 Disable l "Disabled nodes" +STARTLINE}
+ Disable true
+ addUserKnob {6 unusefull l "Unusefull nodes" t "Removes every branches of the node tree where the end is not connected to a Write" +STARTLINE}
+ unusefull true
+ addUserKnob {6 sources l Sources t "Removes Reads, Cameras, Groups, ReadGeo\n( Works only if \"Unusefull\" nodes is ticked)" -STARTLINE}
+ sources true
+ addUserKnob {22 clean l Clean! T "all_dependencies=\[]\nend_message=\"Nothing to Clean\"\n### Selection Mode Checker #####\n\nif len(nuke.selectedNodes()) >1:\n    Check = True\n    nodes = nuke.selectedNodes()\nelse:\n    nodes=nuke.allNodes()\n    Check = False\n    \n##List of usefull Nodes ####\n\nif not nuke.thisNode()\[\"sources\"].value():\n    exeption=\[\"Write\",\"Read\", \"StickyNote\", \"ReadGeo2\", \"Camera2\", \"Group\", \"BackdropNode\"]\nelse:\n    exeption=\[\"Write\",\"BackdropNode\"]\n\n\n\n\n##Delete all the Disable nodes  #####\n\nif nuke.thisNode()\[\"Disable\"].value():\n    for i in nodes:\n        try:\n            if i\[\"disable\"].value():\n                if i.Class() ==\"Write\" and i.dependencies():\n                    None\n                else:\n                    nuke.delete(i)\n                    end_message=\"Clean!\"\n                        \n\n            if i.Class()==\"Read\" and i.error():\n                nuke.delete(i)\n                end_message=\"Clean!\"\n        except:\n            None\n            \n            \n##List of usefull alone Nodes ####\n\nif len(nuke.selectedNodes()) >1:\n    Check = True\n    nodes = nuke.selectedNodes()\nelse:\n    nodes=nuke.allNodes()\n    Check = False\n    \n    \n\n\nalone_node_protection=\[]\n\nfor i in nodes:\n    for j in i.dependencies():\n        all_dependencies.append(j)\nfor i in nodes:\n    if not i.dependencies() and i not in all_dependencies:\n        if i.Class() in exeption:\n            alone_node_protection.append(i)\n\n            \n##Delete viewer nodes inside of groups  #####\n\nfor i in nuke.allNodes():\n    if i.Class() == \"Group\":\n        for j in nuke.allNodes(group = i):\n            if j.Class() == \"Viewer\":\n                nuke.delete(j)\n                end_message=\"Clean!\"\n    if nuke.thisNode()\[\"viewers\"].value() == True and i.Class() == \"Viewer\":\n        nuke.delete(i)\n        end_message=\"Clean!\"\n\n\n## Variable prep   \n\nif nuke.thisNode()\[\"unusefull\"].value():\n    bad_nodes=\[0]\nelse:\n    bad_nodes=\[]\n    \nselected_nodes=nuke.selectedNodes()\n\n\n\n\n##Main code #########\n\nwhile bad_nodes:\n    working_nodes=\[nuke.thisNode()]\n    all_nodes=\[]\n    bad_nodes=\[]\n\n    for i in nuke.allNodes():\n        all_nodes.append(i)\n        for j in i.dependencies(): ## make a list of node in use by other nodes\n            if j not in working_nodes:\n                working_nodes.append(j)\n        if i.Class() == \"Write\" or i.Class() == \"Viewer\" or i in alone_node_protection: ## check if the \"unused\" node is either a Write or in the protected list - if YES count as a usefull node\n            working_nodes.append(i)\n        \n    ## Substract all the (selected) nodes by the nodes in use by other node to fid the node that are not used anywhere\n    if Check == True:\n        bad_nodes = (set(all_nodes) - set(working_nodes))-(set(all_nodes) - set(selected_nodes))\n    else:\n        bad_nodes = (set(all_nodes) - set(working_nodes))\n        \n    ## delete the none usefull nodes\n    if bad_nodes:\n        for i in bad_nodes:\n            nuke.delete(i)\n            end_message=\"Clean!\"\n\n\nif len(nuke.selectedNodes()) >1:\n    nodes = nuke.selectedNodes()\nelse:\n    nodes=nuke.allNodes()\n\n\nfor a in nodes:\n    if a.Class()== \"BackdropNode\":\n        check = True\n        for j in a.getNodes():\n            if j.Class() != \"Dot\":\n                check = False\n        if check:\n            nuke.delete(a)\n            end_message=\"Clean!\"\n            \n            \nprint (end_message)" +STARTLINE}
+}
+
